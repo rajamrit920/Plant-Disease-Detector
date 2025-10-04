@@ -1,9 +1,9 @@
 import streamlit as st
+import gdown
 import tensorflow as tf
 from PIL import Image
 import numpy as np
 import os
-import requests  # 👈 Added this import
 
 # -------------------- Page Config --------------------
 st.set_page_config(
@@ -15,16 +15,16 @@ st.set_page_config(
 st.title("🌿 Plant Disease Detection App")
 st.write("Upload a leaf image to detect the plant disease. The model will predict the disease and show the confidence level.")
 
-# -------------------- Model Download & Load --------------------
-model_url = "https://drive.google.com/uc?export=download&id=YOUR_FILE_ID"  # 👈 Replace YOUR_FILE_ID with your actual ID
+# -------------------- Model Setup --------------------
 model_path = "plant_model.h5"
+file_id = "19qE1l-lkAAbyW5dfbnOOjKzQDFFg7HUg"  # Replace with your Google Drive file ID
+url = f"https://drive.google.com/uc?id={file_id}"
 
-# If model not found locally, download it
+# Download model if it does not exist
 if not os.path.exists(model_path):
     st.info("📥 Downloading model from Google Drive...")
-    with open(model_path, "wb") as f:
-        f.write(requests.get(model_url).content)
-    st.success("✅ Model downloaded from Google Drive!")
+    gdown.download(url, model_path, quiet=False)
+    st.success("✅ Model downloaded successfully!")
 
 # Load the model
 try:
@@ -41,16 +41,15 @@ if uploaded_file:
     st.image(img, caption="Uploaded Image", use_column_width=True)
 
     # Preprocess
-    img_array = np.array(img)/255.0
-    img_array = np.expand_dims(img_array, axis=0)
+    img_array = np.expand_dims(np.array(img)/255.0, axis=0)
 
     # Predict
-    prediction = model.predict(img_array)
     class_names = ["Apple___Black_rot", "Apple___Healthy", "Tomato___Late_blight"]
+    prediction = model.predict(img_array)
     predicted_class = class_names[np.argmax(prediction)]
     confidence = np.max(prediction) * 100
 
-    # Show Results
+    # Show results
     st.markdown("### Prediction Result")
     st.write(f"**Predicted Disease:** {predicted_class}")
     st.progress(int(confidence))
